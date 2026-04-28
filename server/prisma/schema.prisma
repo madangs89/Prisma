@@ -130,6 +130,7 @@ model Subjects {
   code              String         @unique @db.VarChar(255)
   specialization_id String
   specialization    Specialization @relation(fields: [specialization_id], references: [id])
+  thumbnail_url     String?        @db.VarChar(500)
   year              Int
   semester          Int
   credits           Int            @default(3)
