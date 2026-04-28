@@ -41,6 +41,8 @@ model Specialization {
   duration_year Int      @default(4)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
+
+  batches Batches[]
 }
 
 model User {
@@ -60,7 +62,63 @@ model User {
   created_at        DateTime     @default(now())
   updated_at        DateTime     @updatedAt
 
+  roles        UserRoles[]
+  grantedRoles UserRoles[] @relation("GrantedBy")
+
   @@index([department_id])
   @@index([status])
   @@index([status, department_id])
+}
+
+model UserRoles {
+  id   String @id @default(uuid())
+  role String @default("student") @db.VarChar(30)
+
+  user_id    String   @unique
+  user       User     @relation(fields: [user_id], references: [id])
+  granted_by String
+  grantedBy  User     @relation("GrantedBy", fields: [granted_by], references: [id])
+  granted_at DateTime @default(now())
+}
+
+model AcademicCycles {
+  id         String   @id @default(uuid())
+  name       String   @unique @db.VarChar(255)
+  start_date DateTime
+  end_date   DateTime
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  sections Sections[]
+}
+
+model Batches {
+  id                String         @id @default(uuid())
+  label             String         @unique @db.VarChar(255)
+  start_year        Int
+  end_year          Int
+  is_active         Boolean        @default(true)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
+  specialization_id String
+  specialization    Specialization @relation(fields: [specialization_id], references: [id])
+
+  section Sections[]
+
+  @@unique([start_year, end_year, specialization_id])
+  @@index([specialization_id])
+}
+
+model Sections {
+  id                String         @id @default(uuid())
+  name              String         @unique @db.VarChar(255)
+  batch_id          String
+  batch             Batches        @relation(fields: [batch_id], references: [id])
+  academic_cycle_id String
+  academic_cycle    AcademicCycles @relation(fields: [academic_cycle_id], references: [id])
+
+  @@unique([batch_id, academic_cycle_id, name])
+  @@index([batch_id])
+  @@index([academic_cycle_id, batch_id])
 }
