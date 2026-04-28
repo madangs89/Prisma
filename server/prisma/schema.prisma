@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,20 +6,61 @@ datasource db {
   provider = "postgresql"
 }
 
+model Department {
+  id         String   @id @default(uuid())
+  name       String   @unique @db.VarChar(255)
+  code       String   @unique @db.VarChar(255)
+  hod_id     String?
+  hod        User?    @relation("DepartmentHOD", fields: [hod_id], references: [id])
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+  branches   Branch[]
+  user       User[]   @relation("DepartmentUsers")
+}
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  createdAt DateTime @default(now())
+model Branch {
+  id              String           @id @default(uuid())
+  department_id   String
+  department      Department       @relation(fields: [department_id], references: [id])
+  name            String           @unique @db.VarChar(255)
+  code            String           @unique @db.VarChar(255)
+  is_active       Boolean          @default(true)
+  created_at      DateTime         @default(now())
+  updated_at      DateTime         @updatedAt
+  specializations Specialization[]
+}
+
+model Specialization {
+  id            String   @id @default(uuid())
+  branch_id     String
+  branch        Branch   @relation(fields: [branch_id], references: [id])
+  name          String   @unique @db.VarChar(255)
+  code          String   @unique @db.VarChar(255)
+  is_active     Boolean  @default(true)
+  duration_year Int      @default(4)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 }
 
 model User {
-  id    Int    @id @default(autoincrement())
-  name  String
-  email String @unique
-  posts Post[]
+  id                String       @id @default(uuid())
+  name              String       @db.VarChar(255)
+  email             String       @unique @db.VarChar(255)
+  password_hash     String       @db.VarChar(255)
+  usn               String       @unique @db.VarChar(255)
+  employee_id       String       @unique @db.VarChar(255)
+  phone             String       @unique @db.VarChar(255)
+  department_id     String
+  department        Department?  @relation("DepartmentUsers", fields: [department_id], references: [id])
+  hod_of            Department[] @relation("DepartmentHOD")
+  profile_photo_url String?      @db.VarChar(500)
+  status            String       @default("active") // active, inactive, suspended
+  last_login_at     DateTime?    @db.Timestamp(3)
+  created_at        DateTime     @default(now())
+  updated_at        DateTime     @updatedAt
+
+  @@index([department_id])
+  @@index([status])
+  @@index([status, department_id])
 }
