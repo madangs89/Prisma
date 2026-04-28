@@ -42,7 +42,8 @@ model Specialization {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  batches Batches[]
+  batches  Batches[]
+  subjects Subjects[]
 }
 
 model User {
@@ -121,4 +122,19 @@ model Sections {
   @@unique([batch_id, academic_cycle_id, name])
   @@index([batch_id])
   @@index([academic_cycle_id, batch_id])
+}
+
+model Subjects {
+  id                String         @id @default(uuid())
+  name              String         @unique @db.VarChar(255)
+  code              String         @unique @db.VarChar(255)
+  specialization_id String
+  specialization    Specialization @relation(fields: [specialization_id], references: [id])
+  year              Int
+  semester          Int
+  credits           Int            @default(3)
+  type              String         @db.VarChar(50) // theory, practical, project
+  is_active         Boolean        @default(true)
+  created_at        DateTime       @default(now())
+  updated_at        DateTime       @updatedAt
 }
