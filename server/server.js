@@ -4,6 +4,7 @@ dotenv.config();
 import prisma, { connectPrisma } from "./config/prism.config.js";
 import departmentRouter from "./routes/department.routes.js";
 import userRouter from "./routes/user.routes.js";
+import branchRouter from "./routes/branch.routes.js";
 
 const app = express();
 app.use(express.json());
@@ -15,6 +16,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/department", departmentRouter);
 app.use("/api/user", userRouter);
+app.use("/api/branch", branchRouter);
 
 app.listen(3000, async () => {
   await connectPrisma();
