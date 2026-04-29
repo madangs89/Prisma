@@ -24,25 +24,27 @@ model Branch {
   id                     String                   @id @default(uuid())
   department_id          String
   department             Department               @relation(fields: [department_id], references: [id])
-  name                   String                   @unique @db.VarChar(255)
+  name                   String                   @db.VarChar(255)
   code                   String                   @unique @db.VarChar(255)
   is_active              Boolean                  @default(true)
   created_at             DateTime                 @default(now())
   updated_at             DateTime                 @updatedAt
   specializations        Specialization[]
   coordinatorAssignments CoordinatorAssignments[]
+
+  @@unique([name, department_id])
 }
 
 model Specialization {
-  id            String   @id @default(uuid())
-  branch_id     String
-  branch        Branch   @relation(fields: [branch_id], references: [id])
-  name          String   @unique @db.VarChar(255)
-  code          String   @unique @db.VarChar(255)
-  is_active     Boolean  @default(true)
-  duration_year Int      @default(4)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  id             String   @id @default(uuid())
+  branch_id      String
+  branch         Branch   @relation(fields: [branch_id], references: [id])
+  name           String   @db.VarChar(255)
+  code           String   @unique @db.VarChar(255)
+  is_active      Boolean  @default(true)
+  duration_years Int      @default(4)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   batches                   Batches[]
   subjects                  Subjects[]
@@ -50,6 +52,8 @@ model Specialization {
   teachingAssignments       TeachingAssignments[]
   coordinatorAssignments    CoordinatorAssignments[]
   facultySpecializationMaps FacultySpecializationMap[]
+
+  @@unique([name, branch_id])
 }
 
 model User {
@@ -57,18 +61,17 @@ model User {
   name              String       @db.VarChar(255)
   email             String       @unique @db.VarChar(255)
   password_hash     String       @db.VarChar(255)
-  usn               String       @unique @db.VarChar(255)
-  employee_id       String       @unique @db.VarChar(255)
-  phone             String       @unique @db.VarChar(255)
+  usn               String?      @unique @db.VarChar(255)
+  employee_id       String?      @unique @db.VarChar(255)
+  phone             String?      @unique @db.VarChar(255)
   department_id     String
-  department        Department?  @relation("DepartmentUsers", fields: [department_id], references: [id])
+  department        Department   @relation("DepartmentUsers", fields: [department_id], references: [id])
   hod_of            Department[] @relation("DepartmentHOD")
   profile_photo_url String?      @db.VarChar(500)
   status            String       @default("active") // active, inactive, suspended
   last_login_at     DateTime?    @db.Timestamp(3)
   created_at        DateTime     @default(now())
   updated_at        DateTime     @updatedAt
-
   roles                     UserRoles[]
   grantedRoles              UserRoles[]                @relation("GrantedBy")
   student_academic_status   StudentAcademicStatus[]
@@ -87,7 +90,7 @@ model UserRoles {
   id   String @id @default(uuid())
   role String @default("student") @db.VarChar(30)
 
-  user_id    String   @unique
+  user_id    String
   user       User     @relation(fields: [user_id], references: [id])
   granted_by String
   grantedBy  User     @relation("GrantedBy", fields: [granted_by], references: [id])
@@ -130,7 +133,7 @@ model Batches {
 
 model Sections {
   id                String           @id @default(uuid())
-  name              String           @unique @db.VarChar(255)
+  name              String           @db.VarChar(255)
   batch_id          String
   batch             Batches          @relation(fields: [batch_id], references: [id])
   academic_cycle_id String
@@ -145,7 +148,7 @@ model Sections {
 
 model Subjects {
   id                String         @id @default(uuid())
-  name              String         @unique @db.VarChar(255)
+  name              String         @db.VarChar(255)
   code              String         @unique @db.VarChar(255)
   specialization_id String
   specialization    Specialization @relation(fields: [specialization_id], references: [id])
@@ -158,9 +161,10 @@ model Subjects {
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt
 
-  curriculum      Curriculum?
+  curriculum      Curriculum[]
   section_subject SectionSubject[]
 
+  @@unique([name, specialization_id])
   @@index([specialization_id])
   @@index([specialization_id, year])
 }
@@ -169,7 +173,7 @@ model Curriculum {
   id                String         @id @default(uuid())
   specialization_id String
   specialization    Specialization @relation(fields: [specialization_id], references: [id])
-  subject_id        String         @unique
+  subject_id        String
   subject           Subjects       @relation(fields: [subject_id], references: [id])
   year              Int
   semester          Int
@@ -217,7 +221,7 @@ model StudentAcademicStatus {
   current_year           Int
   current_semester       Int
   is_active              Boolean        @default(true)
-  status                 String         @default("promoted ") // promoted | detained | lateral_entry | dropped | graduated
+  status                 String         @default("promoted") // promoted | detained | lateral_entry | dropped | graduated
   remarks                String?        @db.VarChar(500)
   promoted_from_cycle_id String
   promoted_from_cycle    AcademicCycles @relation("PromotedFromCycle", fields: [promoted_from_cycle_id], references: [id])
@@ -241,8 +245,9 @@ model Enrollments {
   status            String         @default("active")
   enrolled_at       DateTime       @default(now())
 
-  @@unique([student_id, section_id, academic_cycle_id, year, semester])
+  @@unique([student_id, academic_cycle_id, year, semester])
   @@index([section_id, academic_cycle_id])
+  @@index([student_id, academic_cycle_id])
 }
 
 model TeachingAssignments {
@@ -256,23 +261,22 @@ model TeachingAssignments {
   type               String         @default("theory") @db.VarChar(50) // theory, practical, project
   is_primary         Boolean        @default(true)
   is_active          Boolean        @default(true)
-  replace_by         String
-  replaced_by        User           @relation("Replacement", fields: [replace_by], references: [id])
+  replace_by         String?
+  replaced_by        User?          @relation("Replacement", fields: [replace_by], references: [id])
   assigned_at        DateTime       @default(now())
 
-  @@unique([section_subject_id, faculty_id, specialization_id, type])
+  @@unique([section_subject_id, faculty_id, type])
   @@index([faculty_id, specialization_id])
   @@index([section_subject_id])
 }
 
 model CoordinatorAssignments {
-  id                String         @id @default(uuid())
-  faculty_id        String
-  faculty           User           @relation(fields: [faculty_id], references: [id])
-  department_id     String
-  department        Department     @relation(fields: [department_id], references: [id])
-  branch_id         String
-  branch            Branch         @relation(fields: [branch_id], references: [id])
+  id            String     @id @default(uuid())
+  faculty_id    String
+  faculty       User       @relation(fields: [faculty_id], references: [id])
+  department_id String
+  department    Department @relation(fields: [department_id], references: [id])
+
   specialization_id String
   specialization    Specialization @relation(fields: [specialization_id], references: [id])
   academic_cycle_id String
@@ -281,11 +285,12 @@ model CoordinatorAssignments {
   year              Int
   semester          Int
   is_active         Boolean        @default(true)
+  branch            Branch?        @relation(fields: [branchId], references: [id])
+  branchId          String?
 
-  @@unique([faculty_id, department_id, branch_id, specialization_id, academic_cycle_id, year, semester])
+  @@unique([faculty_id, department_id, specialization_id, academic_cycle_id, year, semester])
   @@index([faculty_id])
   @@index([department_id])
-  @@index([branch_id])
   @@index([specialization_id])
   @@index([academic_cycle_id])
 }
@@ -300,7 +305,8 @@ model FacultySpecializationMap {
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt
   is_primary_specs  Boolean        @default(true)
-  assigned_at DateTime @default(now())
+  assigned_at       DateTime       @default(now())
+
   @@unique([faculty_id, specialization_id])
   @@index([faculty_id])
   @@index([specialization_id])
