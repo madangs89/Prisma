@@ -83,15 +83,14 @@ model UserRoles {
 }
 
 model AcademicCycles {
-  id         String   @id @default(uuid())
-  name       String   @unique @db.VarChar(255)
+  id         String     @id @default(uuid())
+  name       String     @unique @db.VarChar(255)
   start_date DateTime
   end_date   DateTime
-  is_active  Boolean  @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  sections Sections[]
+  is_active  Boolean    @default(true)
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  sections   Sections[]
 }
 
 model Batches {
@@ -104,12 +103,11 @@ model Batches {
   updated_at        DateTime       @updatedAt
   specialization_id String
   specialization    Specialization @relation(fields: [specialization_id], references: [id])
-
-  section Sections[]
-
+  section           Sections[]
   @@unique([start_year, end_year, specialization_id])
   @@index([specialization_id])
 }
+
 
 model Sections {
   id                String         @id @default(uuid())
@@ -118,7 +116,6 @@ model Sections {
   batch             Batches        @relation(fields: [batch_id], references: [id])
   academic_cycle_id String
   academic_cycle    AcademicCycles @relation(fields: [academic_cycle_id], references: [id])
-
   @@unique([batch_id, academic_cycle_id, name])
   @@index([batch_id])
   @@index([academic_cycle_id, batch_id])
@@ -138,4 +135,10 @@ model Subjects {
   is_active         Boolean        @default(true)
   created_at        DateTime       @default(now())
   updated_at        DateTime       @updatedAt
+  @@index([specialization_id])
+  @@index([specialization_id, year])
 }
+
+
+
+
